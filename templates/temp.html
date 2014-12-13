@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% block body %}
+<div class="container">
+	<div class="row">
+	  <div id="graph" class="col-md-12"></div>
+	</div>
+	
+	<div class="row">
+	  <div id="table text-center" class="col-md-8 col-md-offset-2">
+		<table class="table table-hover">
+			<caption>数据库前10条记录</caption>
+			   <thead>
+				  <tr>
+					 <th>ID</th>
+					 <th>TIME</th>
+					 <th>CPU TEMPERATURE</th>
+					 <th>GPU TEMPERATURE</th>
+				  </tr>
+			   </thead>
+			   <tbody>
+					{% for i in message %}
+						<tr>
+								<td>{{ i.ID }}</td>
+								<td>{{ i.TIME }}</td>
+								<td>{{ i.CPU_TEMP }}</td>
+								<td>{{ i.GPU_TEMP }}</td>
+						</tr>
+					{% endfor %}
+			   </tbody>
+		</table>
+	  </div>
+	</div>
+</div>
+
+{% endblock %}
+
+
+{% block js %}
+<script type="text/javascript">
+var chart; // global
+var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+var submit_form = function() {
+  $.getJSON($SCRIPT_ROOT + '/addtemp', function(data) {
+		var series0 = chart.series[0],
+		shift0 = series0.data.length > 20; // shift if the series is longer than 20
+		
+		var series1 = chart.series[1],
+		shift1 = series1.data.length > 20; // shift if the series is longer than 20
+		
+		chart.series[0].addPoint([data.TIME,data.CPU_TEMP], true, shift0);
+		chart.series[1].addPoint([data.TIME,data.GPU_TEMP], true, shift1);		
+		setTimeout(submit_form, 60000);    
+  });
+  return false;
+};
+  
+$(document).ready(function() {
+	chart = new Highcharts.Chart({
+		chart: {
+            renderTo: 'graph',
+            defaultSeriesType: 'line',
+            events: {
+                load: submit_form
+            }
+        },
+		title: {
+			text: 'Raspberry-Pi Temperature ',
+			x: -20 //center
+		},
+		subtitle: {
+			text: 'Source: Jeremy Pi',
+			x: -20
+		},
+		xAxis: {
+				categories: []
+		},
+		yAxis: {
+			title: {
+				text: 'Temperature (°C)'
+			},
+			plotLines: [{
+				value: 0,
+				width: 1,
+				color: '#808080'
+			}]
+		},
+		tooltip: {
+			valueSuffix: '°C'
+		},
+		legend: {
+			layout: 'vertical',
+			align: 'right',
+			verticalAlign: 'middle',
+			borderWidth: 0
+		},
+		series: [{
+			name: 'CPU Temperature',
+			data: []
+		}, {
+            name: 'GPU Temperature',
+            data: []
+        }]
+	});
+	
+	
+});
+         
+</script>
+{% endblock %}
